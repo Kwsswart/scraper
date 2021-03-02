@@ -5,6 +5,7 @@ from proxies import get_proxies
 from itertools import cycle
 import pandas as pd
 import time
+import csv
 
 
 def extract_title_from_result(soup):
@@ -52,100 +53,101 @@ def extract_summary_from_result(soup):
     return summaries
 
 
-# variables for each scrape
-max_results_per_area = 100
-areas = ["Madrid+provincia", "Las+Palmas+provincia", "Galicia", "Barcelona+provincia", "Cádiz+provincia"]
-columns = ["Area", "Job Title", "Company Name", "Location", "Summary", "Salary"]
-df = pd.DataFrame(columns=columns)
+def scrape():
+    # variables for each scrape
+    max_results_per_area = 100
+    areas = ["Madrid+provincia", "Las+Palmas+provincia", "Galicia", "Barcelona+provincia", "Cádiz+provincia"]
+    columns = ["Area", "Job Title", "Company Name", "Location", "Summary", "Salary"]
+    df = pd.DataFrame(columns=columns)
 
-# Scraping loop:
+    # Scraping loop:
 
-proxies = get_proxies()
-proxy_pool = cycle(proxies)
+    proxies = get_proxies()
+    proxy_pool = cycle(proxies)
 
-for area in areas:
-    for start in range(0, max_results_per_area, 10):
-        proxy = next(proxy_pool)
-        url = "http://es.indeed.com/jobs?q=Junior+developer&l=" + str(area) + "&jt=fulltime&lang=en&start=" + str(start)
-        try:
-            page = requests.get(url,proxies={"http://": proxy, "https://": proxy})
-            time.sleep(15) # separate page grabs
-            soup = BeautifulSoup(page.text, "lxml", from_encoding="utf-8")
-            print(soup.prettify())
-            for div in soup.find_all(name="div", attrs={"class":"row"}):
-                num = len(df) + 1 
-                job_post = [] 
-                job_post.append(area)
-                # Title
-                for a in div.find_all(name="a", attrs={"data-tn-element":"jobTitle"}):
-                    job_post.append(a["title"])
-                # Company Name
-                company = div.find_all(name="span", attrs={"class":"company"})
-                if len(company) > 0:
-                    for b in company:
-                        job_post.append(b.text.strip())
-                else:
-                    try_again = div.find_all(name="span", attrs={"class":"result-link-source"})
-                    for span in try_again:
-                        job_post.append(span.text.strip())
-                # Location
-                spans = div.find_all(name="span", attrs={"class":"location"})
-                for span in spans:
-                    job_post.append(span.text)
-                # Summary
-                dv = div.find_all(name="div", attrs={"class":"summary"})
-                for d in dv:
-                    job_post.append(d.text.strip())
-                # Salary
-                try:
-                    span = div.find(name="span", attrs={"class":"salary"})
-                    job_post.append(span.text.strip())
-                except:
-                    job_post.append("Nothing Found")
-                # Pass to pandas
-                print(job_post)
-                df = df.append(job_post)
-        except:
+    for area in areas:
+        for start in range(0, max_results_per_area, 10):
+            print("*")
             proxy = next(proxy_pool)
-            page = requests.get(url,proxies={"http://": proxy, "https://": proxy})
-            time.sleep(15) # separate page grabs
-            soup = BeautifulSoup(page.text, "lxml", from_encoding="utf-8")
-            for div in soup.find_all(name="div", attrs={"class":"row"}):
-                num = len(df) + 1 
-                job_post = [] 
-                job_post.append(area)
-                # Title
-                for a in div.find_all(name="a", attrs={"data-tn-element":"jobTitle"}):
-                    job_post.append(a["title"])
-                # Company Name
-                company = div.find_all(name="span", attrs={"class":"company"})
-                if len(company) > 0:
-                    for b in company:
-                        job_post.append(b.text.strip())
-                else:
-                    try_again = div.find_all(name="span", attrs={"class":"result-link-source"})
-                    for span in try_again:
+            url = "http://es.indeed.com/jobs?q=Junior+developer&l=" + str(area) + "&jt=fulltime&lang=en&start=" + str(start)
+            try:
+                page = requests.get(url,proxies={"http://": proxy, "https://": proxy})
+                time.sleep(15) # separate page grabs
+                soup = BeautifulSoup(page.text, "lxml", from_encoding="utf-8")
+                for div in soup.find_all(name="div", attrs={"class":"row"}):
+                    num = (len(df) + 1) 
+                    job_post = [] 
+                    job_post.append(area)
+                    # Title
+                    for a in div.find_all(name="a", attrs={"data-tn-element":"jobTitle"}):
+                        job_post.append(a["title"])
+                    # Company Name
+                    company = div.find_all(name="span", attrs={"class":"company"})
+                    if len(company) > 0:
+                        for b in company:
+                            job_post.append(b.text.strip())
+                    else:
+                        try_again = div.find_all(name="span", attrs={"class":"result-link-source"})
+                        for span in try_again:
+                            job_post.append(span.text.strip())
+                    # Location
+                    spans = div.find_all(name="span", attrs={"class":"location"})
+                    for span in spans:
+                        job_post.append(span.text)
+                    # Summary
+                    dv = div.find_all(name="div", attrs={"class":"summary"})
+                    for d in dv:
+                        job_post.append(d.text.strip())
+                    # Salary
+                    try:
+                        span = div.find(name="span", attrs={"class":"salary"})
                         job_post.append(span.text.strip())
-                # Location
-                spans = div.find_all(name="span", attrs={"class":"location"})
-                for span in spans:
-                    job_post.append(span.text)
-                # Summary
-                dv = div.find_all(name="div", attrs={"class":"summary"})
-                for d in dv:
-                    job_post.append(d.text.strip())
-                # Salary
-                try:
-                    span = div.find(name="span", attrs={"class":"salary"})
-                    job_post.append(span.text.strip())
-                except:
-                    job_post.append("Nothing Found")
-                # Pass to pandas
-                print(job_post)
-                df = df.append(job_post)
+                    except:
+                        job_post.append("Nothing Found")
+                    # Pass to pandas
+                    df.loc[num] = job_post
+            except:
+                proxy = next(proxy_pool)
+                page = requests.get(url,proxies={"http://": proxy, "https://": proxy})
+                time.sleep(15) # separate page grabs
+                soup = BeautifulSoup(page.text, "lxml", from_encoding="utf-8")
+                for div in soup.find_all(name="div", attrs={"class":"row"}):
+                    num = len(df) + 1 
+                    job_post = [] 
+                    job_post.append(area)
+                    # Title
+                    for a in div.find_all(name="a", attrs={"data-tn-element":"jobTitle"}):
+                        job_post.append(a["title"])
+                    # Company Name
+                    company = div.find_all(name="span", attrs={"class":"company"})
+                    if len(company) > 0:
+                        for b in company:
+                            job_post.append(b.text.strip())
+                    else:
+                        try_again = div.find_all(name="span", attrs={"class":"result-link-source"})
+                        for span in try_again:
+                            job_post.append(span.text.strip())
+                    # Location
+                    spans = div.find_all(name="span", attrs={"class":"location"})
+                    for span in spans:
+                        job_post.append(span.text)
+                    # Summary
+                    dv = div.find_all(name="div", attrs={"class":"summary"})
+                    for d in dv:
+                        job_post.append(d.text.strip())
+                    # Salary
+                    try:
+                        span = div.find(name="span", attrs={"class":"salary"})
+                        job_post.append(span.text.strip())
+                    except:
+                        job_post.append("Nothing Found")
+                    # Pass to pandas
+                    df.loc[num] = job_post
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(df)
+    # save to csv
+    df.to_csv("sample.csv",quoting=csv.QUOTE_ALL, encoding='utf-8')
 
-# save to csv
-df.to_csv("sample.csv", sep='\t', encoding='utf-8')
 
 
-
+scrape()
