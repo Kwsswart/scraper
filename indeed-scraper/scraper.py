@@ -53,8 +53,11 @@ def extract_summary_from_result(soup):
     return summaries
 
 
-def scrape():
+def scraper():
     # variables for each scrape
+    HEADERS = ({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+    })
     max_results_per_area = 100
     areas = ["Madrid+provincia", "Las+Palmas+provincia", "Galicia", "Barcelona+provincia", "Cádiz+provincia"]
     columns = ["Area", "Job Title", "Company Name", "Location", "Summary", "Salary"]
@@ -71,7 +74,7 @@ def scrape():
             proxy = next(proxy_pool)
             url = "http://es.indeed.com/jobs?q=Junior+developer&l=" + str(area) + "&jt=fulltime&lang=en&start=" + str(start)
             try:
-                page = requests.get(url,proxies={"http://": proxy, "https://": proxy})
+                page = requests.get(url,proxies={"http://": proxy, "https://": proxy}, headers=HEADERS)
                 time.sleep(15) # separate page grabs
                 soup = BeautifulSoup(page.text, "lxml", from_encoding="utf-8")
                 for div in soup.find_all(name="div", attrs={"class":"row"}):
@@ -148,6 +151,4 @@ def scrape():
     # save to csv
     df.to_csv("sample.csv",quoting=csv.QUOTE_ALL, encoding='utf-8')
 
-
-
-scrape()
+scraper()
