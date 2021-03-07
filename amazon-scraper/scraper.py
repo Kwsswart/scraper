@@ -9,41 +9,48 @@ from proxy import Proxies
 
 class Amazon_Scraper:
 
-    def __init__(self, search_word, max_search_results, language):
+    def __init__(self, search_word: str, max_search_results: int, language: str):
         self.search_word = self.format_search_word(word=search_word)
         self.max_pages = int(round(max_search_results/18))
         self.language = language
 
-    def format_search_word(self, word):
+    def format_search_word(self, word: str) -> str:
         w = list(word)
         for i in range(len(w) - 1):
             if w[i] == ' ':
                 w[i] == '+'
         return "".join(w)
 
-    def extract_name(self, div):
+    def extract_name(self, div: object) -> str:
         name = ''
         for h in div.find_all(name="h2"):
             for a in h.find_all(name="a"):
                 for s in a.find_all(name="span"):
                         name = s.text
         return name
+    
+    def extract_url(self, div: object) -> str:
+        url = ''
+        for h in div.find_all(name="h2"):
+            a = h.find("a")
+            url = "https://www.amazon.com/" + a["href"]
+        return url
 
-    def extract_rating(self, div):
+    def extract_rating(self, div: object) -> str:
         rating = ''
         for a in div.find_all(name="a", attrs={"class":"a-popover-trigger"}):
             for s in a.find_all(name="span"):
                 rating = s.text
         return rating
 
-    def extract_image_link(self, div):
+    def extract_image_link(self, div: object) -> str:
         image_link = ''
         for sp in div.find_all(name="span", attrs={"data-component-type":"s-product-image"}):
             for i in sp.find_all(name="img"):
                 image_link = i["src"]
         return image_link
 
-    def extract_price(self, div):
+    def extract_price(self, div: object) -> str:
         price = ''
         for sym in div.find_all(name="span", attrs={"class":"a-price-symbol"}):
             price = price + sym.text + ' '
@@ -56,9 +63,8 @@ class Amazon_Scraper:
     def scrape(self):
 
         prox = Proxies()
-        columns = ["Description", "Rating", "Price", "Image"]
+        columns = ["Description", "Rating", "Price", "Image", "URL"]
         df = pd.DataFrame(columns=columns)
-
         for start in range(0, self.max_pages):
             print(start)
             proxy = prox.return_proxy()
@@ -76,6 +82,7 @@ class Amazon_Scraper:
                     product.append(self.extract_rating(div))
                     product.append(self.extract_price(div))
                     product.append(self.extract_image_link(div))
+                    product.append(self.extract_url(div))
                     df.loc[num] = product
             except:
                 print("There was a problem")
@@ -83,4 +90,5 @@ class Amazon_Scraper:
             print(df)
         
         df.to_csv("sample.csv", quoting=csv.QUOTE_ALL, encoding="utf-8")
+        df.to_json("sample.json")
 

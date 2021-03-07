@@ -5,10 +5,11 @@ from itertools import cycle
 import traceback
 
 
-def get_proxies():
+def get_proxies() -> set:
     """
     Function to fetch a set object of free proxies
     """
+    
     url = "https://free-proxy-list.net/"
     response = requests.get(url)
     parser = fromstring(response.text)
@@ -46,18 +47,18 @@ user_agents = [
 
 class Proxies:
 
-    def __init__(self, proxy_function=get_proxies, user_agents=user_agents, referers=referers):
+    def __init__(self, proxy_function=get_proxies, user_agents=user_agents: list, referers=referers: list):
         self.proxies = list(proxy_function())
         self.user_agents = user_agents
         self.referers = referers
 
 
-    def return_header(self):
+    def return_header(self) -> dict:
         header = {
             'user-agent': self.user_agents[random.randint(0, len(self.user_agents)-1)],
             'referer': self.referers[random.randint(0, len(self.referers)-1)],
         }
         return header
 
-    def return_proxy(self):
+    def return_proxy(self) -> list: 
         return self.proxies[random.randint(0, len(self.proxies)-1)]
