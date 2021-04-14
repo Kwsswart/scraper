@@ -24,6 +24,7 @@ def get_links(soup: object) -> list:
       return links
    else: 
       main()
+      
 
 def find_information(soup: object, url: str) -> dict:
    '''

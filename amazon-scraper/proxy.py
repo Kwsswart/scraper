@@ -47,7 +47,7 @@ user_agents = [
 
 class Proxies:
 
-    def __init__(self, proxy_function=get_proxies, user_agents=user_agents: list, referers=referers: list):
+    def __init__(self, proxy_function=get_proxies, user_agents=user_agents, referers=referers):
         self.proxies = list(proxy_function())
         self.user_agents = user_agents
         self.referers = referers

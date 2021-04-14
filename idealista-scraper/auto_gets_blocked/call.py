@@ -15,11 +15,12 @@ from random_user_agent.params import SoftwareName, OperatingSystem
 
 from time import sleep
 
-PROXY_HOST = 'proxy.scrapingdog.com'  # rotating proxy or host
-PROXY_PORT = 8081 # port
-PROXY_USER = 'scrapingdog' # username
-PROXY_PASS = <api key> # password
+# https://botproxy.net/docs/how-to/setting-chromedriver-proxy-auth-with-selenium-using-python/
 
+PROXY_HOST = 'proxy.scrapingdog.com'  
+PROXY_PORT = 8081 
+PROXY_USER = 'scrapingdog' 
+PROXY_PASS =  os.environ.get("API_KEY")
 
 manifest_json = """
 {
@@ -80,16 +81,18 @@ class Request:
     '''
     
     selenium_retries = 0
-    
     def __init__(self, url: str):
         self.url = url
 
     def get_selenium_res(self, class_name=None: str) -> object:
+        '''
+        Function to send request & return html page
+        '''
+
         try:
             software_names = [SoftwareName.CHROME.value]
             operating_systems = [OperatingSystem.WINDOWS.value,
                                 OperatingSystem.LINUX.value]
-
             user_agent_rotator = UserAgent(software_names=software_names,
                                         operating_systems=operating_systems,
                                         limit=100)
@@ -120,7 +123,10 @@ class Request:
             return self.get_selenium_res(class_name)
 
     def get_chromedriver(self,use_proxy=False: bool, user_agent=None: str) -> object:
-        
+        '''
+        Function to set up & return driver
+        '''
+
         chrome_options = Options()
         if use_proxy:
             pluginfile = 'proxy_auth_plugin.zip'
